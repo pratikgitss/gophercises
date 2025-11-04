@@ -1,0 +1,46 @@
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Log and temp files
+*.log
+*.tmp
+*.swp
+
+# Dependency vendor folder (if used)
+vendor/
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.iml
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Environment & local configuration
+.env
+.env.*
+
+# Go workspace files (if using)
+go.work
+go.work.sum
+
+# Binary builds inside subprojects
+quiz/quiz
+*/bin/
+*/build/
+
+# Cache and test output
+*.coverprofile
+*.coverage
+
+# Misc local data files (optional)
+*.local
+
