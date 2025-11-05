@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 type problem struct {
@@ -15,7 +16,7 @@ type problem struct {
 
 func main() {
 	csvFilename := flag.String("csv", "problems.csv", "a csv file in the format of 'question, answer'")
-
+	timeInSeconds := flag.Int("limit", 30, "time limit for the quiz")
 	flag.Parse()
 	file, err := os.Open(*csvFilename)
 
@@ -33,13 +34,29 @@ func main() {
 
 	correct := 0
 
+	timer := time.NewTimer(time.Duration(*timeInSeconds) * time.Second)
+	// problemLoop:
 	for i, problem := range problems {
-		fmt.Printf("Problem %d: %s= \n", i+1, problem.q)
-		var ans string
-		fmt.Scanf("%s ", &ans)
-		if ans == problem.a {
-			fmt.Println("Correct!")
-			correct++
+
+		fmt.Printf("Problem %d: %s= ", i+1, problem.q)
+		answerCh := make(chan string)
+
+		go func() {
+			var ans string
+			fmt.Scanf("%s ", &ans)
+			answerCh <- ans
+		}()
+
+		select {
+		case <-timer.C:
+			fmt.Printf("\nYour correct answers were %d out of %d questions.\n", correct, len(problems))
+			// break problemLoop // this is one way to break out of loop
+			return
+		case ans := <-answerCh:
+			if ans == problem.a {
+				fmt.Println("Correct!")
+				correct++
+			}
 		}
 	}
 
