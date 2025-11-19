@@ -17,30 +17,85 @@ var defaultHandlerTmpl = `
     <title>Choose your own adventure</title>
 </head>
 <body>
-    <h1>{{.Title}}</h1>
-    {{range .Paragraphs}}
-        <p>{{.}}</p>
-    {{end}}
-    <ul>
-    {{range .Options}}
-        <li><a href="/{{.Chapter}}">{{.Text}}</a></li>
-    {{end}}
-    </ul> 
+	<section class="page">
+		<h1>{{.Title}}</h1>
+		{{range .Paragraphs}}
+			<p>{{.}}</p>
+		{{end}}
+		<ul>
+		{{range .Options}}
+			<li><a href="/{{.Chapter}}">{{.Text}}</a></li>
+		{{end}}
+		</ul>
+	</section>
+	<style>
+      body {
+        font-family: helvetica, arial;
+      }
+      h1 {
+        text-align:center;
+        position:relative;
+      }
+      .page {
+        width: 80%;
+        max-width: 500px;
+        margin: auto;
+        margin-top: 40px;
+        margin-bottom: 40px;
+        padding: 80px;
+        background: #FFFCF6;
+        border: 1px solid #eee;
+        box-shadow: 0 10px 6px -6px #777;
+      }
+      ul {
+        border-top: 1px dotted #ccc;
+        padding: 10px 0 0 0;
+        -webkit-padding-start: 0;
+      }
+      li {
+        padding-top: 10px;
+      }
+      a,
+      a:visited {
+        text-decoration: none;
+        color: #6295b5;
+      }
+      a:active,
+      a:hover {
+        color: #7792a2;
+      }
+      p {
+        text-indent: 1em;
+      }
+    </style>
 </body>
 </html>`
+
+var tpl *template.Template
 
 func init() {
 	tpl = template.Must(template.New("").Parse(defaultHandlerTmpl))
 }
 
-var tpl *template.Template
+type HandlerOption func(h *handler)
 
-func NewHandler(s Story) http.Handler {
-	return handler{s}
+func WithTemplate(t *template.Template) HandlerOption {
+	return func(h *handler) {
+		h.t = t
+	}
+}
+
+func NewHandler(s Story, opts ...HandlerOption) http.Handler {
+	h := handler{s, tpl}
+	for _, opt := range opts {
+		opt(&h)
+	}
+	return h
 }
 
 type handler struct {
 	s Story
+	t *template.Template
 }
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +106,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path = path[1:]
 
 	if chapter, ok := h.s[path]; ok {
-		err := tpl.Execute(w, chapter)
+		err := h.t.Execute(w, chapter)
 		if err != nil {
 			log.Printf("%v", err)
 			http.Error(w, "Something went wrong!!", http.StatusInternalServerError)
